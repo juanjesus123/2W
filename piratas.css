@@ -1,0 +1,28 @@
+#fondo {
+    width: 100%;
+    height: 100vh;
+    background: url(./fondopiratas.jpg);
+}
+table {
+    border-collapse: collapse;
+}
+td {
+border: 1px solid black;
+padding: 10px;
+text-align: center;
+font-weight: bold;
+font-size: 20px;
+color: white; /* Hace que el texto sea blanco */
+position: relative; /* Permite posicionar el texto sobre la imagen */
+}
+
+.minadestapada {
+    
+    background-image: url(./barco.jpeg)!important;
+}
+.descubierta {
+    background-image: url(./agua.jpeg)!important;
+}
+.casilla {
+background-image: url(./fondomar.jpg);
+}

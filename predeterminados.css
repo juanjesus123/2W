@@ -1,0 +1,33 @@
+#fondo {
+    width: 100%;
+    height: 100vh;
+    background: url(./fondo.png);
+}
+table {
+    border-collapse: collapse;
+}
+td {
+border: 1px solid black;
+padding: 10px;
+text-align: center;
+font-weight: bold;
+font-size: 20px;
+color: white; /* Hace que el texto sea blanco */
+position: relative; /* Permite posicionar el texto sobre la imagen */
+}
+
+.minadestapada {
+    
+    background-image: url(./tapabomba.jpg)!important;
+}
+.descubierta {
+    background-image: url(./tapaabierta.jpg)!important;
+}
+.casilla {
+background-image: url(./tapa.jpg);
+}
+
+
+
+
+    

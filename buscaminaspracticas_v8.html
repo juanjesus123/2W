@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscaminas</title>
+    <link id="tema-css" rel="stylesheet" href="predeterminados.css">
+</head>
+
+<body>
+    <button onclick="records()">Ver records</button>
+    <button id="volver" onclick="volver()" hidden>Volver</button>
+    <div id="resultados">
+
+    </div>
+    <div id="fondo">
+        
+        <div id="temas">
+            <p>Elige el tema que quieras.</p>
+            <button id="pirataboton" onclick="piratas()">piratas</button>
+            <button onclick="aviones()">aviones</button>
+            
+        </div>
+        <div id="inputs">
+            <p>Elige el nivel que quieras.</p>
+            <button onclick="facil()">Facil</button>
+            <button onclick="medio()">Medio</button>
+            <button onclick="dificil()">Dificil</button>
+
+            <label for="ancho" hidden>Ancho</label>
+            <input type="range" id="ancho" min="10" max="100" value="50" disabled hidden>
+            <label for="x" hidden>X</label>
+            <input type="range" id="fila" min="2" max="10" value="4" disabled hidden>
+            <label for="y" hidden>Y</label>
+            <input type="range" id="columna" min="2" max="10" value="4" disabled hidden>
+            <label for="minas" hidden>Nº minas</label>
+            <input type="range" id="minas" min="1" max="4" value="2" disabled hidden>
+
+            <div id="info">
+                <div id="contadorTiempo">Tiempo: 0s</div>
+                <div id="contadorClicks">Clicks: 0</div>
+                <div id="contadorVidas">Vidas: 3</div>
+                <div id="contadorAyudas">Ayudas restantes: 3</div> 
+            </div>
+
+            <div id="tablero"></div>
+        </div>
+    </div>
+
+    
+    <script>
+        let verresultado=document.getElementById("resultados");
+        verresultado.style.visibility="hidden";
+        let fondo = document.getElementById("tablero");
+        let filas = document.getElementById("fila").value;
+        let columnas = document.getElementById("columna").value;
+        let minas = document.getElementById("minas").value;
+
+        let casillasDesbloqueadas = 0;
+        let intervaloTiempo;
+        let tiempoIniciado = false;
+        let tiempo = 0;
+        let clicks = 0;
+        let vidas = 3;  
+        let ayudasRestantes = 3;  
+
+        function detenerTiempo() {
+            clearInterval(intervaloTiempo);
+            tiempoIniciado = false;
+        }
+
+        function iniciarTiempo() {
+            if (!tiempoIniciado) {
+                tiempoIniciado = true;
+                intervaloTiempo = setInterval(() => {
+                    tiempo++;
+                    document.getElementById("contadorTiempo").textContent = `Tiempo: ${tiempo}s`;
+                }, 1000);
+            }
+        }
+
+        function reiniciarContadores() {
+            casillasDesbloqueadas = 0;
+            tiempo = 0;
+            clicks = 0;
+            vidas = 3; 
+            ayudasRestantes = 3;  
+            document.getElementById("contadorTiempo").textContent = `Tiempo: 0s`;
+            document.getElementById("contadorClicks").textContent = `Clicks: 0`;
+            document.getElementById("contadorVidas").textContent = `Vidas: ${vidas}`; 
+            document.getElementById("contadorAyudas").textContent = `Ayudas restantes: ${ayudasRestantes}`;  
+            detenerTiempo();
+        }
+
+        function facil() {
+            detenerTiempo();
+            filas = 5;
+            columnas = 5;
+            minas = 3;
+           
+            generarTablero();
+        }
+
+        function medio() {
+            detenerTiempo();
+            filas = 7;
+            columnas = 7;
+            minas = 5;
+           
+            generarTablero();
+        }
+
+        function dificil() {
+            detenerTiempo();
+            filas = 10;
+            columnas = 10;
+            minas = 8;
+           
+            generarTablero();
+        }
+        
+
+        function generarTablero() {
+            fondo.innerHTML = "";
+            reiniciarContadores();
+
+            let casillasTotales = filas * columnas - minas;
+            let casillasDesbloqueadas = 0;
+
+            let tabla = document.createElement("table");
+            tabla.style.borderCollapse = "collapse";
+            fondo.appendChild(tabla);
+
+            for (let i = 0; i < filas; i++) {
+                let tr = document.createElement("tr");
+                tabla.appendChild(tr);
+                for (let j = 0; j < columnas; j++) {
+                    let td = document.createElement("td");
+                    td.id = j + "-" + i;
+                    td.width = "50px";
+                    td.height = "50px";
+                    td.classList.add("casilla");
+                    td.style.backgroundSize = "cover";
+                    td.style.backgroundRepeat = "no-repeat";
+                    td.style.backgroundPosition = "center";
+                    td.addEventListener("click", descubrir);
+                    tr.appendChild(td);
+                }
+            }
+
+            generarminas();
+        }
+
+        function descubrir() {
+            iniciarTiempo();
+            let casillasTotales = filas * columnas - minas;
+            clicks++;
+            document.getElementById("contadorClicks").textContent = `Clicks: ${clicks}`;
+
+            if (this.classList.contains("mina")) {
+                vidas--; 
+                document.getElementById("contadorVidas").textContent = `Vidas: ${vidas}`; 
+                this.classList.add("minadestapada");
+
+                if (vidas <= 0) {
+                    perder(); 
+                } else {
+                    tiempo += 30; 
+                }
+            } else {
+                let minasAdyacentes = revisar(this);
+                this.classList.add("descubierta");
+                this.removeEventListener("click", descubrir);
+
+                if (!this.dataset.descubierta) {
+                    casillasDesbloqueadas++;
+                    this.dataset.descubierta = true;
+                }
+
+                if (minasAdyacentes > 0) {
+                    this.textContent = minasAdyacentes;
+                } else {
+                    descubrirAdyacentes(this);
+                }
+                console.log(casillasDesbloqueadas+ "casillasDesbloqueadas");
+                console.log(casillasTotales+ "casillasTotales");
+                if (casillasDesbloqueadas === casillasTotales) {
+                    detenerTiempo();
+                    victoria();
+                }
+            }
+        }
+
+        function revisar(casilla) {
+            let contador = 0;
+            let posicion = casilla.id.split("-");
+            let x = parseInt(posicion[0]);
+            let y = parseInt(posicion[1]);
+
+            let posicionesAdyacentes = [
+                [x - 1, y - 1], [x, y - 1], [x + 1, y - 1],
+                [x - 1, y],               [x + 1, y],
+                [x - 1, y + 1], [x, y + 1], [x + 1, y + 1]
+            ];
+
+            posicionesAdyacentes.forEach(([adjX, adjY]) => {
+                let idAdyacente = `${adjX}-${adjY}`;
+                let celdaAdyacente = document.getElementById(idAdyacente);
+                if (celdaAdyacente && celdaAdyacente.classList.contains("mina")) {
+                    contador++;
+                }
+            });
+
+            return contador;
+        }
+
+        function descubrirAdyacentes(casilla) {
+            let posicion = casilla.id.split("-");
+            let x = parseInt(posicion[0]);
+            let y = parseInt(posicion[1]);
+
+            let posicionesAdyacentes = [
+                [x - 1, y - 1], [x, y - 1], [x + 1, y - 1],
+                [x - 1, y],               [x + 1, y],
+                [x - 1, y + 1], [x, y + 1], [x + 1, y + 1]
+            ];
+
+            posicionesAdyacentes.forEach(([adjX, adjY]) => {
+                let idAdyacente = `${adjX}-${adjY}`;
+                let celdaAdyacente = document.getElementById(idAdyacente);
+
+                if (celdaAdyacente &&
+                    !celdaAdyacente.classList.contains("mina") &&
+                    !celdaAdyacente.classList.contains("descubierta")) {
+
+                    let minasAdyacentes = revisar(celdaAdyacente);
+                    celdaAdyacente.classList.add("descubierta");
+                    celdaAdyacente.removeEventListener("click", descubrir);
+                    casillasDesbloqueadas++;
+
+                    if (minasAdyacentes > 0) {
+                        celdaAdyacente.textContent = minasAdyacentes;
+                    } else {
+                        descubrirAdyacentes(celdaAdyacente);
+                    }
+                }
+            });
+        }
+
+        function generarminas() {
+            let minasgeneradas = 0;
+            let tablero = document.querySelectorAll("td");
+
+            while (minasgeneradas < minas) {
+                let posicion = Math.floor(Math.random() * filas * columnas);
+                if (!tablero[posicion].classList.contains("mina")) {
+                    tablero[posicion].classList.add("mina");
+                    minasgeneradas++;
+                }
+            }
+        }
+
+        function ayuda(event) {
+            if (event.button === 1 && ayudasRestantes > 0) {
+                ayudasRestantes--;
+                document.getElementById("contadorAyudas").textContent = `Ayudas restantes: ${ayudasRestantes}`;
+
+                let casilla = event.target;
+                let id = casilla.id.split("-");
+                let x = parseInt(id[0]);
+                let y = parseInt(id[1]);
+
+                let posicionesAdyacentes = [
+                    [x - 1, y - 1], [x, y - 1], [x + 1, y - 1],
+                    [x - 1, y], [x + 1, y],
+                    [x - 1, y + 1], [x, y + 1], [x + 1, y + 1]
+                ];
+
+                let estadoAnterior = {};
+                posicionesAdyacentes.forEach(([adjX, adjY]) => {
+                    let idAdyacente = `${adjX}-${adjY}`;
+                    let celdaAdyacente = document.getElementById(idAdyacente);
+                    if (celdaAdyacente) {
+                        estadoAnterior[idAdyacente] = {
+                            textContent: celdaAdyacente.textContent,
+                            classList: [...celdaAdyacente.classList] // Guardar clases actuales
+                        };
+
+                        if (celdaAdyacente.classList.contains("mina")) {
+                            celdaAdyacente.classList.add("minadestapada");
+                        } else {
+                            let minasAdyacentes = revisar(celdaAdyacente);
+                            if (minasAdyacentes > 0) {
+                                celdaAdyacente.textContent = minasAdyacentes;
+                            }
+                            celdaAdyacente.classList.add("descubierta");
+                        }
+                    }
+                });
+
+                // Restaurar el estado después de 3 segundos
+                setTimeout(() => {
+                    posicionesAdyacentes.forEach(([adjX, adjY]) => {
+                        let idAdyacente = `${adjX}-${adjY}`;
+                        let celdaAdyacente = document.getElementById(idAdyacente);
+                        if (celdaAdyacente && estadoAnterior[idAdyacente]) {
+                            celdaAdyacente.textContent = estadoAnterior[idAdyacente].textContent;
+                            celdaAdyacente.className = "";
+                            celdaAdyacente.classList.add(...estadoAnterior[idAdyacente].classList);
+                        }
+                    });
+                }, 3000);
+            }
+        }
+
+        document.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            if (event.button === 1 && event.target.tagName === "TD") {
+                ayuda(event);
+            }
+        });
+
+        function cambiarTema(estilo) {
+            let linkTema = document.getElementById("tema-css");
+
+            if (estilo === "piratas") {
+                linkTema.href = "piratas.css";
+            } else if (estilo === "aviones") {
+                linkTema.href = "aviones.css";
+            }
+        }
+
+        function piratas() {
+            cambiarTema("piratas");
+            generarTablero();
+        }
+
+        function aviones() {
+            cambiarTema("aviones");
+            generarTablero();
+        }
+        //let resultado=[];
+        let resultado="";
+        function victoria() {
+            detenerTiempo();
+           
+            /*resultado.push(tiempo);
+            resultado.push(clicks);
+            resultado.push(vidas);
+            resultado.push(ayudasRestantes);
+            if(filas==5){
+                resultado.push("1");
+            }else if(filas==7){
+                resultado.push("2");
+            }else{
+                resultado.push("3");
+            }*/
+            resultado="tiempo : "+ tiempo+"s, clicks : "+clicks+", vidas : "+vidas+", ayudas restantes : "+ayudasRestantes+", nivel : "+filas;
+            setCookie("miprimeracookie", resultado);
+            alert("¡Felicidades, has ganado!");
+            generarTablero();
+        }
+       
+
+        function setCookie(nombrecookie, valor) {
+    deleteCookie(nombrecookie);
+    const expirationDate = new Date();
+    expirationDate.setFullYear(expirationDate.getFullYear() + 1); 
+    document.cookie = `${nombrecookie}=${valor}; expires=${expirationDate.toUTCString()}; path=/`;
+    console.log("Cookie guardada: ", document.cookie);
+}
+
+function deleteCookie(nombrecookie) {
+        document.cookie = nombrecookie + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        }
+       
+        function getCookie(nombrecookie) {
+    const cookies = document.cookie.split("; ");
+    for (const cookie of cookies) {
+        const [cookieNombre, cookieValor] = cookie.split("=");
+        if (cookieNombre === nombrecookie) {
+            return decodeURIComponent(cookieValor); // Decodificar el valor
+        }
+    }
+    return null;
+}
+
+function LeerCookies() {
+    let valorCookie = getCookie("miprimeracookie");
+    console.log("Valor de la cookie: ", valorCookie);
+    return valorCookie ? valorCookie : "No hay records guardados.";
+}
+
+
+        function perder() {
+            detenerTiempo();
+            alert("¡Has perdido! Las minas te han atrapado.");
+            generarTablero();
+        }
+
+        generarTablero();
+        function volver(){
+            window.location.href = "buscaminaspracticas_v8.html";
+        }
+
+    function records(){
+        let fondo = document.getElementById("fondo");
+        fondo.style.visibility = "hidden";
+        let resultados = document.getElementById("resultados");
+        resultados.style.visibility = "visible";
+        let volver = document.getElementById("volver");
+        volver.style.display = "block";
+        resultados.innerHTML =`<p>${LeerCookies()}</p>`;
+
+    }
+    </script>
+</body>
+</html>
